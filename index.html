@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>6 Meses Contigo</title>
+  <style>
+    :root{
+      --bg:#000;
+      --fg:#fff;
+      --muted: rgba(255,255,255,0.08);
+      --muted-2: rgba(255,255,255,0.12);
+      --accent: #ffffff;
+      --max-width: 960px;
+      --radius: 10px;
+      --transition: 0.38s;
+      --page-padding: 28px;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body{ width:100%; height:100%; font-family: Inter, Roboto, "Helvetica Neue", Arial, sans-serif; background:var(--bg); color:var(--fg); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+
+    /* Intro */
+    #intro{
+      position:fixed;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      gap:14px;
+      padding:24px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.97), rgba(0,0,0,0.92));
+      z-index:70;
+    }
+    #intro p{ font-size:2rem; line-height:1.25; margin-bottom:2px; }
+    #intro small{ font-size:0.95rem; color:#cfcfcf; }
+    .btn{
+      padding:12px 22px;
+      font-size:1rem;
+      border:2px solid var(--accent);
+      background:var(--muted);
+      color:var(--fg);
+      cursor:pointer;
+      border-radius:var(--radius);
+      transition: background var(--transition), transform .12s;
+      user-select:none;
+    }
+    .btn:active{ transform:translateY(1px); }
+    .btn.ghost{ background:transparent; }
+
+    /* Rotate / orientation hint */
+    #rotatePrompt{
+      position:fixed;
+      inset:0;
+      display:none;
+      z-index:80;
+      background: linear-gradient(0deg, rgba(0,0,0,0.92), rgba(0,0,0,0.7));
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      padding:20px;
+      color:#eaeaea;
+      font-size:1.05rem;
+    }
+
+    /* Video background & overlay */
+    #video-bg{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      z-index:0;
+      display:none;
+      filter:brightness(.65) saturate(1.05);
+      will-change:transform;
+    }
+    #overlay{
+      position:fixed;
+      inset:0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0.55));
+      z-index:1;
+      display:none;
+      pointer-events:none;
+    }
+
+    /* Pages container */
+    .pages{
+      position:fixed;
+      inset:0;
+      z-index:10;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
+      pointer-events:none;
+    }
+
+    .page{
+      width:100%;
+      max-width:var(--max-width);
+      pointer-events:auto;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:var(--page-padding);
+      color:var(--fg);
+      font-size:1.35rem;
+      line-height:1.7;
+      opacity:0;
+      transform: translate(-50%,-50%) translateY(30px) scale(.995);
+      transition: opacity .7s cubic-bezier(.2,.9,.2,1), transform .7s cubic-bezier(.2,.9,.2,1);
+      position:absolute;
+      left:50%;
+      top:50%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: 16px;
+      backdrop-filter: blur(4px) saturate(1.05);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      max-height: calc(100% - 160px);
+      overflow:auto;
+    }
+    .page p{ white-space:pre-wrap; margin-bottom:0; }
+    .page.active{
+      opacity:1;
+      transform: translate(-50%,-50%) translateY(0) scale(1);
+      z-index:12;
+    }
+
+    /* Controls */
+    #controls{
+      position:fixed;
+      bottom:26px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:30;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      pointer-events:auto;
+      align-content:center;
+    }
+    #nextBtn, #prevBtn, #audioToggle, #muteVideoBtn, #fullscreenBtn {
+      padding:9px 14px;
+      border:2px solid var(--accent);
+      background:var(--muted);
+      color:var(--fg);
+      cursor:pointer;
+      border-radius:12px;
+      font-size:0.95rem;
+      transition: background var(--transition);
+    }
+    #nextBtn:hover, #prevBtn:hover, #audioToggle:hover, #muteVideoBtn:hover, #fullscreenBtn:hover{
+      background:var(--muted-2);
+    }
+
+    #dots{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      padding:6px;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      background:rgba(255,255,255,0.22);
+      border:1px solid rgba(255,255,255,0.06);
+      cursor:pointer;
+    }
+    .dot.active{ background:#fff; }
+
+    .hint{
+      position:fixed;
+      top:14px;
+      left:14px;
+      font-size:.9rem;
+      color:#dcdcdc;
+      z-index:40;
+      opacity:.95;
+      pointer-events:none;
+    }
+
+    #topControls{
+      position:fixed;
+      top:14px;
+      right:14px;
+      z-index:40;
+      display:flex;
+      gap:8px;
+    }
+
+    @media (max-width:900px){
+      #intro p{ font-size:1.5rem; }
+      .page{ font-size:1.02rem; padding:18px; max-width:720px; border-radius:12px; }
+      #controls{ bottom:18px; gap:8px; }
+      .hint{ display:none; }
+      #topControls{ top:8px; right:8px; }
+    }
+
+    @media (max-width:420px){
+      .page{ border-radius:10px; padding:14px; margin:8px; }
+      #nextBtn, #prevBtn{ padding:8px 12px; font-size:.95rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Intro -->
+  <div id="intro" role="dialog" aria-label="Pantalla de inicio" aria-modal="true">
+    <p>Dale al botón y gira el móvil</p>
+    <small>Se recomienda el uso de auriculares</small>
+    <div style="display:flex;gap:12px;margin-top:6px;">
+      <button id="startBtn" class="btn" aria-label="Comenzar experiencia">Comenzar</button>
+      <button id="startBtn-muted" class="btn ghost" aria-label="Comenzar sin sonido">Comenzar (sin sonido)</button>
+    </div>
+  </div>
+
+  <!-- Rotate prompt -->
+  <div id="rotatePrompt" role="status" aria-live="polite">
+    <p>Gira tu dispositivo a horizontal (apaisado) para mejor experiencia.</p>
+  </div>
+
+  <!-- Video de fondo -->
+  <video id="video-bg" playsinline muted loop preload="auto" poster="" aria-hidden="true">
+    <source src="media/fondo.mp4" type="video/mp4">
+    Tu navegador no soporta vídeo.
+  </video>
+  <div id="overlay" aria-hidden="true"></div>
+
+  <!-- Pages -->
+  <main class="pages" aria-live="polite" role="main">
+    <article class="page active" data-index="0" aria-hidden="false">
+      <p>
+Puede que a veces estemos mal,
+Puede que nos peleemos,
+Puede que no sepamos gestionar nuestras emociones,
+O incluso puede que nos hablemos mal o estemos un rato sin hablarnos.
+
+Pero,
+Lo que siempre he sentido, lo que siempre voy a sentir, y lo que siento por ti, no lo cambia ni la peor pelea del mundo, nada me hará dejar de amarte, porque tú eres el amor de mi vida, y no solo de mi vida, sino también de todas las demás vidas posibles, porque te elegiría en todas y cada una de ellas.
+Eres increíble, y te amo por ello. No por cómo eres, sino por quién eres.
+      </p>
+    </article>
+
+    <article class="page" data-index="1" aria-hidden="true">
+      <p>Segunda página, aquí puedes poner otra frase o recuerdo. Añade fotos, fechas o cualquier anécdota especial para hacerla única.</p>
+    </article>
+
+    <article class="page" data-index="2" aria-hidden="true">
+      <p>Tercera página, sigue contando tu historia. Puedes añadir emoji o saltos de línea para ritmo:</p>
+      <p>✨ Recuerdo cuando...</p>
+    </article>
+  </main>
+
+  <!-- Controls -->
+  <div id="controls" style="display:none;">
+    <button id="prevBtn" aria-label="Página anterior">Anterior</button>
+
+    <div id="dots" aria-hidden="false" role="tablist" aria-label="Indicadores de página"></div>
+
+    <button id="nextBtn" aria-label="Siguiente">Siguiente</button>
+  </div>
+
+  <div id="topControls" style="display:none;">
+    <button id="audioToggle" title="Reproducir / Pausar música" aria-pressed="false">▶︎ Música</button>
+    <button id="muteVideoBtn" title="Activar / Desactivar vídeo (silenciar)" aria-pressed="true">🔇 Vídeo</button>
+    <button id="fullscreenBtn" title="Pantalla completa">⤢</button>
+  </div>
+
+  <div class="hint">Usa ← → o desliza para navegar</div>
+
+  <!-- Audio -->
+  <audio id="audio-bg" preload="auto" loop>
+    <source src="media/cancion.mp3" type="audio/mpeg">
+    Tu navegador no soporta audio.
+  </audio>
+
+  <script>
+  (function(){
+    // Elements
+    const startBtn = document.getElementById('startBtn');
+    const startBtnMuted = document.getElementById('startBtn-muted');
+    const intro = document.getElementById('intro');
+    const videoBg = document.getElementById('video-bg');
+    const overlay = document.getElementById('overlay');
+    const pages = Array.from(document.querySelectorAll('.page'));
+    const controls = document.getElementById('controls');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const dotsWrap = document.getElementById('dots');
+    const rotatePrompt = document.getElementById('rotatePrompt');
+    const audioBg = document.getElementById('audio-bg');
+    const topControls = document.getElementById('topControls');
+    const audioToggle = document.getElementById('audioToggle');
+    const muteVideoBtn = document.getElementById('muteVideoBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+    let current = 0;
+    let audioPlaying = false;
+    let videoVisible = false;
+
+    // Build dots
+    pages.forEach((p,i) => {
+      const d = document.createElement('button');
+      d.className = 'dot' + (i===0 ? ' active' : '');
+      d.dataset.index = i;
+      d.setAttribute('role','tab');
+      d.setAttribute('aria-label','Ir a la página ' + (i+1));
+      d.tabIndex = 0;
+      d.addEventListener('click', () => goTo(i));
+      d.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') goTo(i); });
+      dotsWrap.appendChild(d);
+    });
+
+    function showRotateIfNeeded(){
+      if(window.matchMedia && window.matchMedia('(orientation: portrait)').matches && window.innerWidth < 900){
+        rotatePrompt.style.display = 'flex';
+      } else {
+        rotatePrompt.style.display = 'none';
+      }
+    }
+    showRotateIfNeeded();
+    window.addEventListener('orientationchange', showRotateIfNeeded);
+    window.addEventListener('resize', showRotateIfNeeded);
+
+    // Start handlers: two options (with/without audio)
+    async function startExperience({playAudio=true}){
+      intro.style.display = 'none';
+      videoBg.style.display = 'block';
+      overlay.style.display = 'block';
+      controls.style.display = 'flex';
+      topControls.style.display = 'flex';
+
+      // Play video (muted by default)
+      try {
+        videoBg.muted = true;
+        await videoBg.play();
+        videoVisible = true;
+        muteVideoBtn.setAttribute('aria-pressed', 'true');
+      } catch (err) {
+        console.warn('No se pudo reproducir el vídeo automáticamente:', err);
+      }
+
+      // Play audio if requested
+      if(playAudio){
+        try {
+          audioBg.currentTime = 0;
+          await audioBg.play();
+          audioPlaying = true;
+          audioToggle.textContent = '⏸ Música';
+          audioToggle.setAttribute('aria-pressed','true');
+        } catch (err) {
+          console.warn('No se pudo iniciar el audio automáticamente. El usuario puede pulsar el botón Música.', err);
+        }
+      }
+
+      if(screen.orientation && screen.orientation.lock){
+        screen.orientation.lock('landscape').catch(()=>{});
+      }
+
+      goTo(0);
+      nextBtn.focus();
+    }
+
+    startBtn.addEventListener('click', () => startExperience({playAudio:true}));
+    startBtnMuted.addEventListener('click', () => startExperience({playAudio:false}));
+
+    // Navigation
+    function goTo(index){
+      if(index < 0) index = 0;
+      if(index >= pages.length) index = pages.length - 1;
+      pages.forEach((p,i) => {
+        if(i === index){
+          p.classList.add('active');
+          p.setAttribute('aria-hidden','false');
+        } else {
+          p.classList.remove('active');
+          p.setAttribute('aria-hidden','true');
+        }
+      });
+      Array.from(dotsWrap.children).forEach((d,i)=> d.classList.toggle('active', i===index));
+      current = index;
+    }
+
+    nextBtn.addEventListener('click', () => goTo((current + 1) % pages.length));
+    prevBtn.addEventListener('click', () => goTo((current - 1 + pages.length) % pages.length));
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if(intro.style.display !== 'none') return;
+      if(e.key === 'ArrowRight' || e.key === 'PageDown') nextBtn.click();
+      if(e.key === 'ArrowLeft' || e.key === 'PageUp') prevBtn.click();
+      if(e.key === 'Home') goTo(0);
+      if(e.key === 'End') goTo(pages.length - 1);
+      if(e.key === ' ' && document.activeElement.tagName !== 'BUTTON' && document.activeElement.tagName !== 'A' ){
+        e.preventDefault();
+        toggleAudio();
+      }
+    });
+
+    // Swipe support
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const threshold = 40;
+    window.addEventListener('touchstart', (e) => {
+      if(!e.touches || e.touches.length === 0) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, {passive:true});
+    window.addEventListener('touchend', (e) => {
+      if(!e.changedTouches || e.changedTouches.length === 0) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold){
+        if(dx < 0) nextBtn.click();
+        else prevBtn.click();
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if(document.hidden){
+        if(!audioBg.paused){ audioBg.pause(); }
+        if(!videoBg.paused){ videoBg.pause(); }
+      } else {
+        if(audioPlaying){ audioBg.play().catch(()=>{}); }
+        if(videoVisible){ videoBg.play().catch(()=>{}); }
+      }
+    });
+
+    function toggleAudio(){
+      if(audioBg.paused){
+        audioBg.play().then(()=> {
+          audioPlaying = true;
+          audioToggle.textContent = '⏸ Música';
+          audioToggle.setAttribute('aria-pressed','true');
+        }).catch(()=> {
+          audioPlaying = false;
+        });
+      } else {
+        audioBg.pause();
+        audioPlaying = false;
+        audioToggle.textContent = '▶︎ Música';
+        audioToggle.setAttribute('aria-pressed','false');
+      }
+    }
+    audioToggle.addEventListener('click', toggleAudio);
+
+    // Mute/unmute video
+    muteVideoBtn.addEventListener('click', () => {
+      if(videoBg.muted){
+        videoBg.muted = false;
+        muteVideoBtn.textContent = '🔈 Vídeo';
+        muteVideoBtn.setAttribute('aria-pressed','false');
+      } else {
+        videoBg.muted = true;
+        muteVideoBtn.textContent = '🔇 Vídeo';
+        muteVideoBtn.setAttribute('aria-pressed','true');
+      }
+    });
+
+    // Fullscreen toggle
+    fullscreenBtn.addEventListener('click', async () => {
+      const el = document.documentElement;
+      if(!document.fullscreenElement){
+        try{ await el.requestFullscreen(); }catch(e){}
+      } else {
+        try{ await document.exitFullscreen(); }catch(e){}
+      }
+    });
+
+    // focus outlines for keyboard users
+    (function(){
+      function handleFirstTab(e) {
+        if (e.key === 'Tab') {
+          document.documentElement.classList.add('user-is-tabbing');
+          window.removeEventListener('keydown', handleFirstTab);
+        }
+      }
+      window.addEventListener('keydown', handleFirstTab);
+    })();
+
+    // Initial
+    goTo(0);
+    audioBg.volume = 1.0;
+    console.info('Sitio listo. Coloca media/cancion.mp3 y media/fondo.mp4 y abre index.html con servidor local o súbelo a hosting.');
+  })();
+  </script>
+</body>
+</html>
